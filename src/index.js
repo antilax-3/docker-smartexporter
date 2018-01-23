@@ -2,6 +2,8 @@ import express from 'express';
 import Prometheus from 'prom-client';
 import smartctl from 'smartctl';
 import config from 'config';
+import fs from 'fs';
+import defConfig from './config/default';
 
 const app = express();
 const port = config.has('port') && config.get('port') || 9120;
@@ -10,12 +12,22 @@ const scrapeInterval = (config.has('scrapeInterval') && config.get('scrapeInterv
 let metricsTimer;
 const defaultMetrics = Prometheus.collectDefaultMetrics({ timeout: scrapeInterval });
 
-if (!config.has('reportedAttributes')) {
-  console.log('Missing configuration file!');
-  process.exit(1);
-}
+let reportedAttributes;
 
-const reportedAttributes = config.get('reportedAttributes');
+if (!config.has('reportedAttributes')) {
+  // Copy over default configuration file
+  console.log('Unable to find configuration file, using defaults');
+  reportedAttributes = defConfig.reportedAttributes;
+  // Copy default to /config
+  fs.writeFile('smartexporter.json', JSON.stringify(defConfig), 'utf8', (err) => {
+    if (err) {
+      return console.log('Error writing to /config/smartexporter.json', err);
+    }
+    console.log('Copied default config to /config/smartexporter.json');
+  });
+} else {
+  reportedAttributes = config.get('reportedAttributes');
+}
 
 // Generate the prometheus metrics
 const prometheusMetrics = reportedAttributes.map((attribute) => {
