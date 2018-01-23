@@ -19,7 +19,7 @@ if (!config.has('reportedAttributes')) {
   console.log('Unable to find configuration file, using defaults');
   reportedAttributes = defConfig.reportedAttributes;
   // Copy default to /config
-  fs.writeFile('smartexporter.json', JSON.stringify(defConfig), 'utf8', (err) => {
+  fs.writeFile('/config/smartexporter.json', JSON.stringify(defConfig), 'utf8', (err) => {
     if (err) {
       return console.log('Error writing to /config/smartexporter.json', err);
     }
