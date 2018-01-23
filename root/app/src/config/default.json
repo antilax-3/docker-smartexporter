@@ -1,43 +1,45 @@
 {
-  "reportedAttributes": [
+  "attributes": [
     {
-      "attributeName": "temperature_celsius",
+      "attributeName": "Temperature_Celsius",
       "name": "temperature",
-      "help": "Temperature of the hard drive",
+      "help": "Temperature of hard drive",
       "labelNames": [
-        "device",
-        "device_model",
-        "serial_number"
+        "Device",
+        "Device Model",
+        "Serial Number"
       ]
     },
     {
-      "attributeName": "total_lbas_written",
+      "attributeID": 190,
+      "name": "airflow_temperature",
+      "help": "Airflow temperature of hard drive",
+      "labelNames": [
+        "Device",
+        "Device Model",
+        "Serial Number"
+      ]
+    },
+    {
+      "attributeName": "Total_LBAs_Written",
       "name": "lbas_written",
       "help": "Total number of LBA's written",
       "labelNames": [
-        "device",
-        "device_model",
-        "serial_number"
+        "Device",
+        "Device Model",
+        "Serial Number",
+        "User Capacity"
       ]
     },
     {
-      "attributeName": "total_lbas_read",
+      "attributeName": "Total_LBAs_Read",
       "name": "lbas_read",
       "help": "Total number of LBA's read",
       "labelNames": [
-        "device",
-        "device_model",
-        "serial_number"
-      ]
-    },
-    {
-      "attributeName": "airflow_temperature_cel",
-      "name": "airflow_temp",
-      "help": "Airflow temperature of hard drive",
-      "labelNames": [
-        "device",
-        "device_model",
-        "serial_number"
+        "Device",
+        "Device Model",
+        "Serial Number",
+        "User Capacity"
       ]
     }
   ],
