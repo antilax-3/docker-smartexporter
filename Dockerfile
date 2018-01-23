@@ -18,8 +18,9 @@ RUN \
  echo "**** cleanup ****" && \
  rm -rf \
  	package*.json \
- 	src \
  	build \
+ 	config \
+ 	src \
 
 # ports and volumes
 EXPOSE 9120
