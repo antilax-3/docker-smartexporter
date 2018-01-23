@@ -26,6 +26,15 @@
       "device_model",
       "serial_number"
     ]
+  },{
+    "attributeName": "airflow_temperature_cel",
+    "name": "airflow_temp",
+    "help": "Airflow temperature of hard drive",
+    "labelNames": [
+      "device",
+      "device_model",
+      "serial_number"
+    ]
   }],
   "port": 9120,
   "scrapeInterval": 15
