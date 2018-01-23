@@ -3,6 +3,7 @@ import Prometheus from 'prom-client';
 import smartctl from 'smartctl';
 import config from 'config';
 import fs from 'fs';
+import os from 'os';
 import defConfig from './config/default';
 
 const app = express();
