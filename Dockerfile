@@ -20,7 +20,7 @@ RUN \
  	package*.json \
  	build \
  	config \
- 	src \
+ 	src
 
 # ports and volumes
 EXPOSE 9120
