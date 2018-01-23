@@ -1,0 +1,19 @@
+{
+  "name": "smartexporter",
+  "version": "1.0.0",
+  "main": "build/main.js",
+  "repository": "https://github.com/RowanTaubitz/smartexporter.git",
+  "author": "Rowan Taubitz <rowan@zantek.com.au>",
+  "license": "MIT",
+  "dependencies": {
+    "backpack-core": "^0.5.0",
+    "config": "^1.29.2",
+    "express": "^4.16.2",
+    "prom-client": "^10.2.2",
+    "smartctl": "^1.0.0"
+  },
+  "scripts": {
+    "dev": "backpack",
+    "build": "backpack build"
+  }
+}
