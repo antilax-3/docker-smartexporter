@@ -1,37 +1,48 @@
 import express from 'express';
 import Prometheus from 'prom-client';
 import smartctl from 'smartctl';
-import config from 'config';
 import fs from 'fs';
-import os from 'os';
 import defConfig from './config/default';
 
 const app = express();
-const port = config.has('port') && config.get('port') || 9120;
-const scrapeInterval = (config.has('scrapeInterval') && config.get('scrapeInterval') || 15) * 1000;
 
+// Attempt to read configuration file
 let metricsTimer;
-const defaultMetrics = Prometheus.collectDefaultMetrics({ timeout: scrapeInterval });
+let config;
 
-let reportedAttributes;
-
-if (!config.has('reportedAttributes')) {
-  // Copy over default configuration file
-  console.log('Unable to find configuration file, using defaults');
-  reportedAttributes = defConfig.reportedAttributes;
-  // Copy default to /config
-  fs.writeFile('/config/smartexporter.json', JSON.stringify(defConfig, null, 2).replace(/\n/, os.EOL), 'utf8', (err) => {
+const copyDefaultConfigFile = () => {
+  console.log('Unable to find configuration file, using defaults.');
+  config = defConfig;
+  fs.writeFile('/config/smartexporter.json', `${JSON.stringify(defConfig, null, 2)}\n`, 'utf8', (err) => {
     if (err) {
       return console.log('Error writing to /config/smartexporter.json', err);
     }
     console.log('Copied default config to /config/smartexporter.json');
   });
+};
+
+if (fs.existsSync('/config/smartexporter.json')) {
+  // Read config file
+  const fileContents = fs.readFileSync('/config/smartexporter.json', 'utf8');
+
+  if (fileContents) {
+    config = JSON.parse(fileContents);
+  }
+
+  if (!config || !config.reportedAttributes) {
+    copyDefaultConfigFile();
+  }
+
 } else {
-  reportedAttributes = config.get('reportedAttributes');
+  copyDefaultConfigFile();
 }
 
+const port = config.port || 9120;
+const scrapeInterval = (config.scrapeInterval || 15) * 1000;
+const defaultMetrics = Prometheus.collectDefaultMetrics({ timeout: scrapeInterval });
+
 // Generate the prometheus metrics
-const prometheusMetrics = reportedAttributes.map((attribute) => {
+const prometheusMetrics = config.reportedAttributes.map((attribute) => {
   const { name, help, labelNames } = attribute;
   const reporter = new Prometheus.Gauge({ name: `smartexporter_${name}`, help, labelNames });
   return { ...attribute, reporter };
@@ -39,7 +50,7 @@ const prometheusMetrics = reportedAttributes.map((attribute) => {
 
 app.get('/', (req, res, next) => {
   setTimeout(() => {
-    res.send('Hi!');
+    res.send('Point Prometheus here for your HDD statistics');
     next();
   }, Math.round(Math.random() * 200));
 });
@@ -132,7 +143,7 @@ const getMetrics = () => {
 
 
 const server = app.listen((port), () => {
-  console.log(`smartexporter listening on port ${port}`);
+  console.log(`Running smartexporter. Listening on port ${port}.`);
 
   // Start a timer to fetch metrics
   metricsTimer = setInterval(getMetrics, scrapeInterval);
