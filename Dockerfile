@@ -19,7 +19,6 @@ RUN \
  rm -rf \
  	package*.json \
  	build \
- 	config \
  	src
 
 # ports and volumes
