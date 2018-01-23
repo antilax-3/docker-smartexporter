@@ -12,7 +12,7 @@ antilax3/smart-exporter
 The parameters are split into two halves, separated by a colon, the left hand side representing the host and the right the container side. For example with a volume -v external:internal - what this shows is the volume mapping from internal to external of the container. So -v /mnt/app/config:/config would map /config from inside the container to be accessible from /mnt/app/config on the host's filesystem.
 
 - `-v /config` - local path for smartexporter config file
-- `-p 9120` http port for webserver
+- `-p 9120` - http port for webserver
 
 It is based on alpine linux, utilising the official node docker repository with alpine tag, for shell access whilst the container is running do `docker exec -it smartexporter /bin/bash`.
 ## Version
