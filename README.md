@@ -6,7 +6,7 @@ docker create --name=smartexporter \
 -v <path to config>:/config \
 -p 9120:9120 \
 --privileged=true \
-antilax3/godaddy-dyndns
+antilax3/smart-exporter
 ```
 ## Parameters
 The parameters are split into two halves, separated by a colon, the left hand side representing the host and the right the container side. For example with a volume -v external:internal - what this shows is the volume mapping from internal to external of the container. So -v /mnt/app/config:/config would map /config from inside the container to be accessible from /mnt/app/config on the host's filesystem.
