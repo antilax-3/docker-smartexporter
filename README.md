@@ -21,18 +21,19 @@ It is based on alpine linux, utilising the official node docker repository with 
 
 The container uses a single volume mounted at '/config'. This volume stores the configuration file 'smartexporter.json'.
 
-    smartexporter
+    config
     |-- smartexporter.json
 
 ## Configuration
 
-The smartexporter.json is copied to the /config volume when first run. It has two optional parameters and one required. 
+The smartexporter.json is copied to the /config volume when first run. It has an optional parameters and one required. 
 
-The optional parameters are:
- - port (default 9120)
+The optional parameter is:
  - scrapeInterval (default 10 seconds)
  
- The required parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. **Only one of either attributeID or attributeName is required.** 
+ The required parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
+ 
+ **Only one of either attributeID or attributeName is required.**
  
     attributeID: Number | The attribute ID
     attributeName: String | The attribute name
@@ -42,5 +43,6 @@ The optional parameters are:
      
 [Known S.M.A.R.T. attributes (Wikipedia)](https://en.wikipedia.org/w/index.php?title=S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
 ## Version
+- **24/01/18:** 1.0.2 | Corrected documentation
 - **24/01/18:** 1.0.1 | Refactoring & Cleaning
 - **23/01/18:** 1.0.0 | Initial Release

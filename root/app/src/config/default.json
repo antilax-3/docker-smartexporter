@@ -43,6 +43,5 @@
       ]
     }
   ],
-  "port": 9120,
   "scrapeInterval": 10
 }

@@ -1,6 +1,6 @@
 {
   "name": "smartexporter",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "build/main.js",
   "repository": "https://github.com/AntilaX-3/docker-smartexporter.git",
   "author": "Rowan Taubitz <rowan@zantek.com.au>",

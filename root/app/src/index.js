@@ -31,7 +31,7 @@ if (fs.existsSync('/config/smartexporter.json')) {
       config = JSON.parse(fileContents);
 
       if (!config || !config.attributes) {
-        copyDefaultConfigFile('Missing required in from the configuration file... Using defaults for now.');
+        copyDefaultConfigFile(`Missing required field 'attributes' from the configuration file. Using defaults for now.`);
       }
     } catch (err) {
       copyDefaultConfigFile(`Unable to parse configuration file, please check JSON validity. Using defaults for now. Error: ${err}`);
