@@ -1,4 +1,6 @@
 # AntilaX-3/smartexporter
+[![](https://images.microbadger.com/badges/version/antilax3/smart-exporter:1.0.2.svg)](https://microbadger.com/images/antilax3/smart-exporter:1.0.2 "Get your own version badge on microbadger.com") [![](https://images.microbadger.com/badges/image/antilax3/smart-exporter:1.0.2.svg)](https://microbadger.com/images/antilax3/smart-exporter:1.0.2 "Get your own image badge on microbadger.com") [![Docker Pulls](https://img.shields.io/docker/pulls/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/) [![Docker Stars](https://img.shields.io/docker/stars/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/)
+
 [smartexporter](https://github.com/AntilaX-3/docker-smartexporter) is a simple server that periodically scrapes S.M.A.R.T stats and exports them via HTTP for Prometheus consumption, written in Node.js.
 The attributes it supplies to Prometheus are configurable, as well as the labels it supplies. 
 ## Usage
