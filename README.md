@@ -28,12 +28,12 @@ The container uses a single volume mounted at '/config'. This volume stores the 
 
 ## Configuration
 
-The smartexporter.json is copied to the /config volume when first run. It has an optional parameters and one required. 
+The smartexporter.json is copied to the /config volume when first run. It has two parameters, one optional and one required.
 
 The optional parameter is:
  - scrapeInterval (default 10 seconds)
  
- The required parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
+The required parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
  
  **Only one of either attributeID or attributeName is required.**
  
