@@ -1,7 +1,7 @@
-# AntilaX-3/smartexporter
+# AntilaX-3/smart-exporter
 [![](https://images.microbadger.com/badges/version/antilax3/smart-exporter:1.0.2.svg)](https://microbadger.com/images/antilax3/smart-exporter:1.0.2 "Get your own version badge on microbadger.com") [![](https://images.microbadger.com/badges/image/antilax3/smart-exporter:1.0.2.svg)](https://microbadger.com/images/antilax3/smart-exporter:1.0.2 "Get your own image badge on microbadger.com") [![Docker Pulls](https://img.shields.io/docker/pulls/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/) [![Docker Stars](https://img.shields.io/docker/stars/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/)
 
-[smartexporter](https://github.com/AntilaX-3/docker-smartexporter) is a simple server that periodically scrapes S.M.A.R.T stats and exports them via HTTP for Prometheus consumption, written in Node.js.
+[smart-exporter](https://github.com/AntilaX-3/docker-smartexporter) is a simple server that periodically scrapes S.M.A.R.T stats and exports them via HTTP for Prometheus consumption, written in Node.js.
 The attributes it supplies to Prometheus are configurable, as well as the labels it supplies. 
 ## Usage
 ```
@@ -28,12 +28,12 @@ The container uses a single volume mounted at '/config'. This volume stores the 
 
 ## Configuration
 
-The smartexporter.json is copied to the /config volume when first run. It has two parameters, one optional and one required.
+The smartexporter.json is copied to the /config volume when first run. It has two parameters, one optional and one mandatory.
 
 The optional parameter is:
  - scrapeInterval (default 10 seconds)
  
-The required parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
+The mandatory parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
  
  **Only one of either attributeID or attributeName is required.**
  
