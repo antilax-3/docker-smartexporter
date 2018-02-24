@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM antilax3/node
 
 # set environment variables
 ENV NODE_CONFIG_DIR /config
@@ -24,5 +24,3 @@ RUN \
 # ports and volumes
 EXPOSE 9120
 VOLUME /config
-
-CMD ["node", "main.js"]
