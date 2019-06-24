@@ -1,8 +1,10 @@
 FROM antilax3/node
 
-# set version label
-LABEL build_date=""
-LABEL version=""
+# set version labels
+ARG build_date
+ARG version
+LABEL build_date="${build_date}"
+LABEL version="${version}"
 LABEL maintainer="Nightah"
 
 # set environment variables
