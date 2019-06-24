@@ -1,7 +1,7 @@
 import express from 'express';
 import fs from 'fs';
 import Prometheus from 'prom-client';
-import smartctl from 'smartctl';
+import * as smartctl from './smartctl';
 
 import defConfig from './config/default';
 
@@ -93,10 +93,17 @@ const getMetrics = () => {
     // Get devices attributes
     const getDeviceAttributes = await Promise.all(getDeviceInfo.map(async (device) => {
       return await new Promise((resolve, reject) => {
-        smartctl.smartAttrs(device.info.device, (err, info) => {
-          if (err) return reject(err);
-          return resolve({ ...device, attributes: info });
-        });
+        if ('transport_protocol' in device.info) {
+          smartctl.smartSasAttrs(device.info.device, (err, info) => {
+            if (err) return reject(err);
+            return resolve({...device, attributes: info});
+          });
+        } else {
+          smartctl.smartAttrs(device.info.device, (err, info) => {
+            if (err) return reject(err);
+            return resolve({...device, attributes: info});
+          });
+        }
       });
     }));
 

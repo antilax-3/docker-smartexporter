@@ -8,8 +8,7 @@
   "dependencies": {
     "backpack-core": "^0.5.0",
     "express": "^4.16.2",
-    "prom-client": "^10.2.2",
-    "smartctl": "^1.0.0"
+    "prom-client": "^10.2.2"
   },
   "scripts": {
     "dev": "backpack",
