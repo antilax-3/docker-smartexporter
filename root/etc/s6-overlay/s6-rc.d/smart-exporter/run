@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bash
+#!/command/with-contenv bash
 
 exec \
 	s6-setuidgid abc node /app/main.js

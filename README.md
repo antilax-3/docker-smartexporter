@@ -58,6 +58,7 @@ The mandatory parameter *reportedAttributes* is an array of objects. The objects
      
 [Known S.M.A.R.T. attributes (Wikipedia)](https://en.wikipedia.org/w/index.php?title=S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
 ## Version
+- **04/07/25:** Updated to use alpine 3.22 image and s6 v3 service structure
 - **24/06/19:** Add ability to capture attributes from SAS drives
 - **24/02/18:** Updated to use alpine 3.7 image and build with jenkins
 - **24/01/18:** Corrected documentation
