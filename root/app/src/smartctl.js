@@ -15,9 +15,8 @@ const execSmart = (args, cb) => {
         const lines = stdout.split('\n').slice(0, -1);
         if (e != null) {
             return cb(lines.slice(3), []);
-        } else {
-            return cb(null, lines.slice(4));
         }
+        return cb(null, lines.slice(4));
     });
 };
 
@@ -31,11 +30,14 @@ const info = (devicePath, cb) => {
             return cb(e, lines);
         }
         const deviceInfos = {};
-        const ref = lines.slice(0, -1);
-        for (let i = 0, len = ref.length; i < len; i++) {
-            const line = ref[i];
-            deviceInfos[line.substring(0, line.search(': ')).trim().replace(/ +/g, '_').toLowerCase()] = line.substring(1 + line.search(': ')).trim();
-        }
+        lines.slice(0, -1).forEach(line => {
+            const device = line
+                .substring(0, line.search(': '))
+                .trim()
+                .replace(/ +/g, '_')
+                .toLowerCase();
+            deviceInfos[device] = line.substring(1 + line.search(': ')).trim();
+        });
         return cb(null, deviceInfos);
     });
 };
@@ -52,13 +54,12 @@ const smartAttrs = (devicePath, cb) => {
         lines = lines.slice(2, -1);
         const head = lines.shift();
         const infos = [];
-        for (let i = 0, len = lines.length; i < len; i++) {
-            const line = lines[i];
+        lines.forEach(line => {
             const attr = line.substring(head.indexOf('ATTRIBUTE_NAME'), head.indexOf('FLAGS')).trim().toLowerCase();
-            if (attr === '') {
-                continue;
-            }
-            infos.push({
+            if (attr === '')
+                return;
+
+            let info = {
                 attr,
                 id: Number(line.substring(0, head.indexOf('ATTRIBUTE_NAME')).trim()),
                 flags: line.substring(head.indexOf('FLAGS'), head.indexOf('VALUE')).trim(),
@@ -67,8 +68,22 @@ const smartAttrs = (devicePath, cb) => {
                 thresh: line.substring(head.indexOf('THRESH'), head.indexOf('FAIL')).trim(),
                 fail: line.substring(head.indexOf('FAIL'), head.indexOf('RAW_VALUE')).trim(),
                 raw: Number(line.substring(head.indexOf('RAW_VALUE')).trim().split(' ')[0])
-            });
-        }
+            };
+
+            // === raw value formatting exceptions === //
+
+            if (attr === 'power_on_hours' && isNaN(info.raw)) {
+                // raw value may be in format "59342h+32m+09.624s"
+                info.raw = Number(line.substring(head.indexOf('RAW_VALUE')).trim().split('h')[0])
+            }
+
+            if (attr === 'head_flying_hours' && isNaN(info.raw)) {
+                // raw value may be in format "59342h+32m+09.624s"
+                info.raw = Number(line.substring(head.indexOf('RAW_VALUE')).trim().split('h')[0])
+            }
+
+            infos.push(info);
+        });
         return cb(null, infos);
     });
 };
@@ -84,17 +99,16 @@ const smartSasAttrs = (devicePath, cb) => {
         }
 
         const infos = [];
-        for (let i = 0, len = lines.length; i < len; i++) {
-            const line = lines[i];
+        lines.forEach(line => {
             if (line.search(':') === -1)
-                continue;
+                return;
 
             infos.push({
                 attr: line.substring(0, line.search(':')).trim().toLowerCase().replace(/ +/g, '_'),
                 id: -1,
                 raw: Number(line.substring(line.search(':') + 1).trim().split(' ')[0])
             });
-        }
+        });
         return cb(null, infos);
     });
 };
@@ -112,9 +126,8 @@ const health = (devicePath, cb) => {
         if (0 === lines[0].search('SMART overall-health self-assessment test result: ')) {
             const status = lines[0].split(' ').pop().toLowerCase();
             return cb(null, status);
-        } else {
-            return cb(null, lines);
         }
+        return cb(null, lines);
     });
 };
 
@@ -124,10 +137,9 @@ const scan = (cb) => {
     }, function (e, stdout, stderr) {
         const devices = [];
         const ref = stdout.split('\n').slice(0, -1);
-        for (let i = 0, len = ref.length; i < len; i++) {
-            const n = ref[i];
+        ref.forEach(n => {
             devices.push(n.split(' ')[0]);
-        }
+        });
         return cb(devices);
     });
 };
