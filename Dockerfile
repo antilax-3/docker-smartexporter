@@ -1,4 +1,4 @@
-FROM antilax3/node
+FROM antilax3/node:latest
 
 # set version labels
 ARG build_date
@@ -18,15 +18,15 @@ COPY root/ /
 
 # install packages
 RUN \
- apk add --no-cache \
- 	smartmontools && \
- echo "**** build node application ****" && \
- cd /app && npm install && NODE_OPTIONS=--openssl-legacy-provider npm run build && mv build/main.js . && \
- echo "**** cleanup ****" && \
- rm -rf \
- 	package*.json \
- 	build \
- 	src
+  apk add --no-cache \
+    smartmontools && \
+  echo "**** build node application ****" && \
+    npm install && NODE_OPTIONS=--openssl-legacy-provider npm run build && mv build/main.js . && \
+  echo "**** cleanup ****" && \
+    rm -rf \
+      package*.json \
+      build \
+      src
 
 # ports and volumes
 EXPOSE 9120
