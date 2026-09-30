@@ -22,12 +22,14 @@ REVISION="${BUILDKITE_COMMIT}"
 MARKER="__TEST_OUTPUT__"
 FAILURES=0
 
-# Runs a shell script inside the container through /init and with-contenv, the same way the
-# image's services run, and returns only the script's output (not the s6 startup banner).
+# Runs a shell script inside the container through /init and with-contenv, the same way the image's services run, and
+# returns only the script's output. Every line the script prints is prefixed with a marker and only marked lines are
+# kept, because the s6 startup banner and the smart-exporter service share the container's stdout, and under emulation
+# the service's log lines land in the middle of the script's output.
 run() {
   local options="$1" script="$2"
   # shellcheck disable=SC2086 # options holds multiple docker run flags and must be word split.
-  docker run --rm --platform "${DOCKER_PLATFORM}" ${options} "${PLATFORM_IMAGE}" /command/with-contenv sh -c "echo ${MARKER}; ${script}" 2> /dev/null | sed "1,/^${MARKER}\$/d"
+  docker run --rm --platform "${DOCKER_PLATFORM}" ${options} "${PLATFORM_IMAGE}" /command/with-contenv sh -c "( ${script} ) | sed 's/^/${MARKER} /'" 2> /dev/null | sed -n "s/^${MARKER} //p"
 }
 
 check() {
@@ -46,7 +48,6 @@ check() {
 # Waits for the smart-exporter service to answer on port 9120 and prints the names of the smartexporter metrics it
 # serves. With no config mounted, the service's first start falls back to the default config and writes it to /config.
 # The container has no disks to scrape, so the checks cover the metrics the default config declares, not their values.
-# The service logs to the same stdout as the script, so the checks that start it read only the script's last line.
 READY="for i in \$(seq 1 40); do M=\$(wget -qO- http://localhost:9120/metrics 2> /dev/null | sed -n 's/^# HELP \(smartexporter_[a-z_]*\) .*/\1/p' | xargs); [ -n \"\${M}\" ] && echo \"\${M}\" && break; sleep 0.5; done"
 
 echo "--- :label: Image metadata [${DOCKER_PLATFORM}]"
@@ -80,12 +81,13 @@ check "application sources and build output are removed" "" \
 check "port 9120 is exposed" '{"9120/tcp":{}}' "$(docker image inspect -f '{{json .Config.ExposedPorts}}' "${PLATFORM_IMAGE}")"
 check "/config is a volume" '{"/config":{}}' "$(docker image inspect -f '{{json .Config.Volumes}}' "${PLATFORM_IMAGE}")"
 check "default config is written to /config on first start, owned by abc" "abc 10" \
-  "$(run "" "${READY} > /dev/null; echo \$(stat -c %U /config/smartexporter.json) \$(node -p 'require(\"/config/smartexporter.json\").scrapeInterval')" | tail -n1)"
+  "$(run "" "${READY} > /dev/null; echo \$(stat -c %U /config/smartexporter.json) \$(node -p 'require(\"/config/smartexporter.json\").scrapeInterval')")"
 check "smart-exporter service serves the default config's metrics on port 9120" \
   "smartexporter_temperature smartexporter_airflow_temperature smartexporter_lbas_written smartexporter_lbas_read" \
-  "$(run "" "${READY}" | tail -n1)"
+  "$(run "" "${READY}")"
+# Under emulation the process's command line starts with the qemu interpreter, so only its tail is matched.
 check "smart-exporter service runs as abc" "abc" \
-  "$(run "" "${READY} > /dev/null; for p in /proc/[0-9]*; do [ \"\$(tr '\\0' ' ' < \${p}/cmdline 2> /dev/null)\" = 'node /app/main.js ' ] && stat -c %U \${p}; done" | tail -n1)"
+  "$(run "" "${READY} > /dev/null; for p in /proc/[0-9]*; do case \"\$(tr '\\0' ' ' < \${p}/cmdline 2> /dev/null)\" in *'node /app/main.js ') stat -c %U \${p} ;; esac; done")"
 
 if [[ ${FAILURES} -gt 0 ]]; then
   echo "^^^ +++"
