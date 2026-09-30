@@ -89,7 +89,7 @@ lefthook run pre-commit --all-files
 
 ### Dependencies
 
-Renovate bumps the go modules in `go.mod`, the go version and the `golang` build image in the Dockerfile. The base images are followed at `antilax3/wolfi:latest` and `antilax3/alpine:latest`, so each build picks up their changes, and smartmontools follows each base image's package repository.
+Renovate bumps the go modules in `go.mod`, tidying `go.sum` after each update, the go version and the `golang` build image in the Dockerfile. The base images are followed at `antilax3/wolfi:latest` and `antilax3/alpine:latest`, so each build picks up their changes, and smartmontools follows each base image's package repository.
 
 ## Version
 - **30/09/26:** Rewrite smart-exporter in Go and build it on the wolfi and alpine base images
