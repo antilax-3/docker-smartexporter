@@ -8,8 +8,15 @@ indent_size = 2
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+[{*.go,go.mod}]
+indent_style = tab
+
 [*.md]
 trim_trailing_whitespace = false
 
 [LICENSE]
+indent_size = unset
+
+# smartctl output, reproduced with its own column alignment.
+[internal/smartctl/testdata/*]
 indent_size = unset

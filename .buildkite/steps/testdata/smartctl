@@ -1,0 +1,13 @@
+#!/bin/sh
+# Stands in for smartctl in the image test, which has no disks to scrape: mounted over /usr/local/bin/smartctl, ahead
+# of the real one on the PATH, it answers the service's queries from the go tests' fixtures, mounted at /testdata.
+set -eu
+
+case "$*" in
+  "--scan-open") cat /testdata/scan.txt ;;
+  "-i /dev/sda") cat /testdata/ata-info.txt ;;
+  "-A -f brief /dev/sda") cat /testdata/ata-attributes.txt ;;
+  "-i /dev/sdb") cat /testdata/sas-info.txt ;;
+  "-A -f brief /dev/sdb") cat /testdata/sas-attributes.txt ;;
+  *) echo "unexpected arguments: $*" >&2; exit 1 ;;
+esac

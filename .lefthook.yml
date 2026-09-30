@@ -7,7 +7,7 @@ pre-commit:
         MISSING=""
         COUNT=0
 
-        for TOOL in editorconfig-checker hadolint jq shellcheck typos yamllint; do
+        for TOOL in editorconfig-checker go hadolint jq shellcheck typos yamllint; do
           if ! command -v ${TOOL} >/dev/null 2>&1; then
             if [ "${COUNT}" -eq 0 ]; then
               MISSING=${TOOL}
@@ -31,6 +31,10 @@ pre-commit:
         jobs:
           - name: editorconfig-checker
             run: editorconfig-checker {staged_files} && echo "0 issues."
+
+          - name: go test
+            run: go test ./... && echo "0 issues."
+            glob: "{*.go,go.mod,go.sum,internal/**/testdata/*}"
 
           - name: hadolint
             run: hadolint {staged_files} && echo "0 issues."

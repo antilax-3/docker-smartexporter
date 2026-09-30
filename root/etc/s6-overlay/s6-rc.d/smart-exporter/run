@@ -2,4 +2,4 @@
 # shellcheck shell=bash
 
 exec \
-  s6-setuidgid abc node /app/main.js
+  s6-setuidgid abc /app/smartexporter

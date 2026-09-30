@@ -1,0 +1,5 @@
+/dev/sda -d sat # /dev/sda [SAT], ATA device
+/dev/sdb -d scsi # /dev/sdb, SCSI device
+# /dev/sdc -d sat # /dev/sdc [SAT], open failed: Permission denied
+/dev/nvme0 -d nvme # /dev/nvme0, NVMe device
+/dev/bus/0 -d megaraid,0 # /dev/bus/0 [megaraid_disk_00], SCSI device
