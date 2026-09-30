@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set +u
+
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/../libs/common.sh"
+
+if [[ "${BUILDKITE_LABEL}" =~ ^:docker:\ Build\ and\ Deploy ]]; then
+  echo "${DOCKER_PASSWORD}" | docker login docker.io -u "${DOCKER_USERNAME}" --password-stdin || exit 1
+fi
+
+if [[ "${BUILDKITE_LABEL}" =~ ^:test_tube:\ Test\ Image ]]; then
+  resolve_image "${VARIANT}"
+  resolve_platform_image "${PLATFORM}" || exit 1
+  export DOCKER_PLATFORM PLATFORM_IMAGE
+
+  echo "--- :docker: Pulling ${IMAGE} for ${DOCKER_PLATFORM}"
+  docker pull --platform "${DOCKER_PLATFORM}" "${PLATFORM_IMAGE}" || exit 1
+fi

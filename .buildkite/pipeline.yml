@@ -1,0 +1,13 @@
+---
+# This represents the hardcoded pipeline set in Buildkite interface which executes the repo provided dynamic pipeline.
+# It is used to ensure that insecure code from external PR cannot be executed before a maintainers approval, to avoid
+# secret leaks.
+steps:
+  # Manual intervention by team required to deploy for forked PRs (prevent secret leakage).
+  - block: "Public fork needs approval"
+    if: build.pull_request.repository.fork == true
+
+  # Pipeline for all others (local branches/PRs).
+  - label: ":pipeline: Setup Pipeline"
+    command: ".buildkite/pipeline.sh | buildkite-agent pipeline upload"
+...

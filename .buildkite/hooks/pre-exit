@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set +u
+
+# Cleanup is best-effort: it only removes the image pre-command pulled, never queries the registry, and never fails the job.
+if [[ "${BUILDKITE_LABEL}" =~ ^:test_tube:\ Test\ Image ]] && [[ "${PLATFORM_IMAGE:-}" == *@sha256:* ]]; then
+  echo "--- :docker: Clean ${PLATFORM_IMAGE}"
+  docker rmi "${PLATFORM_IMAGE}" > /dev/null 2>&1
+fi
+
+exit 0
