@@ -1,3 +1,6 @@
+# Local lefthook overrides
+.lefthook-local.yml
+
 .idea/
 yarn.lock
 root/app/node_modules/

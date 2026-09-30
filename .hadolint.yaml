@@ -1,0 +1,10 @@
+---
+failure-threshold: warning
+
+ignored:
+  # smartmontools tracks the version the base image's repository carries rather than being pinned.
+  - DL3018
+  # The base image is deliberately followed at latest and not pinned, so every build picks up its changes without
+  # a bump in this repository.
+  - DL3007
+...

@@ -1,0 +1,4 @@
+# ShellCheck configuration.
+# Default checks are enabled; require-variable-braces is opted in to enforce the ${VAR} style repo-wide.
+enable=require-variable-braces
+external-sources=false

@@ -44,19 +44,33 @@ The container uses a single volume mounted at '/config'. This volume stores the 
 The smartexporter.json is copied to the /config volume when first run. It has two parameters, one optional and one mandatory.
 
 The optional parameter is:
- - scrapeInterval (default 10 seconds)
- 
+- scrapeInterval (default 10 seconds)
+
 The mandatory parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
- 
- **Only one of either attributeID or attributeName is required.**
- 
+
+**Only one of either attributeID or attributeName is required.**
+
     attributeID: Number | The attribute ID
     attributeName: String | The attribute name
     name: String (Required) | The name reported to Prometheus, prepended with 'smartexporter_'
     help: String (Required) | Help text provided to Prometheus
     labelNames: Array of Strings | Mapped to data from the information section of smartctl. Can be used for labels, ie "Device" for /dev/sdx or "Serial Number" for the serial number of the HDD. 
-     
+
 [Known S.M.A.R.T. attributes (Wikipedia)](https://en.wikipedia.org/w/index.php?title=S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
+## Development
+
+Linting runs locally through [lefthook](https://github.com/evilmartians/lefthook). Install the hooks once per clone:
+
+```bash
+lefthook install
+```
+
+`pre-commit` runs [editorconfig-checker](https://github.com/editorconfig-checker/editorconfig-checker), [hadolint](https://github.com/hadolint/hadolint), `jq`, [shellcheck](https://github.com/koalaman/shellcheck), [typos](https://github.com/crate-ci/typos) and [yamllint](https://github.com/adrienverge/yamllint) over the staged files, and `commit-msg` enforces [Conventional Commits](https://www.conventionalcommits.org). Run everything on demand with:
+
+```bash
+lefthook run pre-commit --all-files
+```
+
 ## Version
 - **04/07/25:** Updated to use alpine 3.22 image and s6 v3 service structure
 - **24/06/19:** Add ability to capture attributes from SAS drives
