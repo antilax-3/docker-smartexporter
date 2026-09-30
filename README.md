@@ -14,6 +14,8 @@ docker create --name=smartexporter \
 --privileged=true \
 antilax3/smart-exporter
 ```
+
+smartctl reads the disks as the container's `abc` user, through the `SYS_RAWIO` and `SYS_ADMIN` capabilities, which the container has to be granted. `--privileged` grants them along with every disk; to grant only those, replace it with `--cap-add SYS_RAWIO --cap-add SYS_ADMIN` and a `--device` for each disk, e.g. `--device /dev/sda`. Without them smartctl can't run at all.
 ## Tags
 
 Two variants are built from the one Dockerfile, for `linux/amd64` and `linux/arm64`.
@@ -92,6 +94,7 @@ lefthook run pre-commit --all-files
 Renovate bumps the go modules in `go.mod`, tidying `go.sum` after each update, the go version and the `golang` build image in the Dockerfile. The base images are followed at `antilax3/wolfi:latest` and `antilax3/alpine:latest`, so each build picks up their changes, and smartmontools follows each base image's package repository.
 
 ## Version
+- **30/09/26:** Let smartctl read the disks as the container user
 - **30/09/26:** Rewrite smart-exporter in Go and build it on the wolfi and alpine base images
 - **30/09/26:** Build on wolfi by default and publish alpine under its own tag, for amd64 and arm64
 - **04/07/25:** Updated to use alpine 3.22 image and s6 v3 service structure

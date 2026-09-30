@@ -80,9 +80,15 @@ check "abc is in the users group" "yes" "$(run "" "id -nG abc | tr ' ' '\\n' | g
 check "container keeps s6 supervision" "0" "$(docker run --rm --platform "${DOCKER_PLATFORM}" "${PLATFORM_IMAGE}" true > /dev/null 2>&1; echo $?)"
 
 echo "--- :floppy_disk: SMART Exporter"
-check "smartctl runs" "valid" "$(run "" "smartctl --version | head -n1 | grep -qE '^smartctl [0-9]+\.[0-9]+ ' && echo valid")"
+# smartctl carries capabilities the container must be granted, without which it can't be executed at all.
+SMARTCTL_CAPS="--cap-add SYS_ADMIN --cap-add SYS_RAWIO"
+check "smartctl runs" "valid" "$(run "${SMARTCTL_CAPS}" "smartctl --version | head -n1 | grep -qE '^smartctl [0-9]+\.[0-9]+ ' && echo valid")"
 check "smartexporter is installed" "/app/smartexporter" "$(run "" "ls /app/smartexporter")"
 check "smartexporter is built for ${APK_ARCH}" "${ELF_MACHINE}" "$(run "" "od -An -tu2 -j18 -N2 /app/smartexporter" | xargs)"
+# abc can't open a disk or send it raw commands, so smartctl carries the capabilities to, once the container is granted
+# them. A device node only root can open stands in for a disk: smartctl gets past opening it, to the first command.
+check "smartctl opens a disk as abc when the container is granted the capabilities" "1" \
+  "$(run "${SMARTCTL_CAPS}" "mknod -m 600 /tmp/disk c 1 3; s6-setuidgid abc smartctl -i -d sat /tmp/disk 2>&1 | grep -c 'Read Device Identity failed'")"
 check "port 9120 is exposed" '{"9120/tcp":{}}' "$(docker image inspect -f '{{json .Config.ExposedPorts}}' "${PLATFORM_IMAGE}")"
 check "/config is a volume" '{"/config":{}}' "$(docker image inspect -f '{{json .Config.Volumes}}' "${PLATFORM_IMAGE}")"
 check "default config is written to /config on first start, owned by abc" "abc 644 1" \

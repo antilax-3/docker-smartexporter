@@ -40,13 +40,34 @@ LABEL maintainer="Nightah"
 # set working directory
 WORKDIR /app
 
+SHELL ["/bin/ash", "-euo", "pipefail", "-c"]
+
 # copy local files
 COPY --link root/ /
 COPY --link --from=build /out/ /
 
 # install runtime packages
-RUN apk add --no-cache \
-  smartmontools
+RUN <<'EOT'
+set -euo pipefail
+
+# the two bases package setcap under different names
+if ls /lib/ld-musl-* > /dev/null 2>&1; then
+  SETCAP_PACKAGE="libcap-setcap"
+else
+  SETCAP_PACKAGE="libcap-utils"
+fi
+
+echo "**** install smartmontools ****"
+apk add --no-cache smartmontools
+
+echo "**** let smartctl open the disks as abc ****"
+# The service runs as abc, which can neither open a disk's device node nor send it the raw ATA, SCSI and NVMe
+# commands SMART is read with, so smartctl carries the three capabilities those need. The container still has to be
+# granted them, by --privileged or by --cap-add with --device.
+apk add --no-cache --virtual .setcap "${SETCAP_PACKAGE}"
+setcap cap_dac_override,cap_sys_admin,cap_sys_rawio+ep "$(command -v smartctl)"
+apk del --no-cache .setcap
+EOT
 
 # ports and volumes
 EXPOSE 9120
