@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set +u
+
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/../libs/common.sh"
+
+cleanup_tags() {
+  local docker_list="${1}" github_list="${2}"
+  local tag
+
+  for tag in ${docker_list}; do
+    if ! grep -qxF "${tag}" <<< "${github_list}"; then
+      echo "Removing tag ${tag} from docker.io"
+      curl -fsL --retry 3 -o /dev/null -X "DELETE" -H "Authorization: JWT ${authtoken}" "https://hub.docker.com/v2/repositories/${DOCKER_REPOSITORY}/tags/${tag}/"
+    fi
+  done
+}
+
+# Tags for deleted branches and closed pull requests are cleaned up after each master build.
+if [[ "${BUILDKITE_LABEL}" =~ ^:docker:\ Build\ and\ Deploy ]] && master; then
+  anontoken=$(curl -fsL --retry 3 "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${DOCKER_REPOSITORY}:pull" | jq -r .token)
+  authtoken=$(jq -n --arg username "${DOCKER_USERNAME}" --arg password "${DOCKER_PASSWORD}" '{username: $username, password: $password}' | curl -fs --retry 3 -H "Content-Type: application/json" -X POST -d @- https://hub.docker.com/v2/users/login/ | jq -r .token)
+  if [[ -z "${authtoken}" ]]; then
+    echo ":warning: docker.io auth token not acquired; DockerHub tag deletions will fail." >&2
+  fi
+  dockertags=$(curl -fsL --retry 3 -H "Authorization: Bearer ${anontoken}" "https://registry-1.docker.io/v2/${DOCKER_REPOSITORY}/tags/list" | jq -r '.tags[]' | sort)
+
+  # latest, the bare variant tags, BK tags and the numeric tags the Jenkins job published are never removed, with or
+  # without a variant suffix. The numeric pattern also covers a version ladder, should the image ever gain one.
+  variant_pattern=$(tr ' ' '|' <<< "${VARIANTS}")
+  keep="^(latest|${variant_pattern}|(BK[0-9]+|PR[0-9]+|[0-9]+(\.[0-9]+)*)(-(${variant_pattern}))?)$"
+
+  echo "--- :docker: Removing tags for deleted branches"
+  dockerbranchtags=$(grep -vE "${keep}" <<< "${dockertags}")
+  githubbranches=$(curl -fs --retry 3 "https://api.github.com/repos/${GITHUB_REPOSITORY}/branches?per_page=100" | jq -r '.[].name' | while read -r branch; do
+    for variant in ${VARIANTS}; do sanitize_tag "${branch}$(variant_suffix "${variant}")"; done
+  done)
+  cleanup_tags "${dockerbranchtags}" "${githubbranches}"
+
+  echo "--- :docker: Removing tags for merged or closed pull requests"
+  dockerprtags=$(grep -E "^PR[0-9]+(-(${variant_pattern}))?$" <<< "${dockertags}")
+  githubprs=$(curl -fs --retry 3 "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?per_page=100" | jq -r '.[].number' | while read -r pr; do
+    for variant in ${VARIANTS}; do echo "PR${pr}$(variant_suffix "${variant}")"; done
+  done)
+  cleanup_tags "${dockerprtags}" "${githubprs}"
+fi
+
+if [[ "${BUILDKITE_LABEL}" =~ ^:docker:\ Build\ and\ Deploy ]]; then
+  docker logout docker.io
+fi
