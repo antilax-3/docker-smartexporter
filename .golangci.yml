@@ -1,0 +1,54 @@
+---
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - durationcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exptostd
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - gocritic
+    - godot
+    - gosec
+    - intrange
+    - misspell
+    - musttag
+    - nilerr
+    - nilnil
+    - noctx
+    - nolintlint
+    - paralleltest
+    - perfsprint
+    - revive
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/antilax-3/docker-smartexporter
+...
