@@ -71,6 +71,10 @@ lefthook install
 lefthook run pre-commit --all-files
 ```
 
+### Dependencies
+
+The application's npm dependencies in `root/app/package.json` are managed by renovate. The base image is followed at `antilax3/node:latest`, so node itself is bumped in [docker-baseimage-node](https://github.com/antilax-3/docker-baseimage-node) and reaches this image on its next build, and smartmontools follows the base image's package repository.
+
 ## Version
 - **04/07/25:** Updated to use alpine 3.22 image and s6 v3 service structure
 - **24/06/19:** Add ability to capture attributes from SAS drives
