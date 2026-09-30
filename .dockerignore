@@ -1,6 +1,7 @@
 .buildkite
 .dockerignore
 .editorconfig
+.golangci.yml
 .git
 .gitignore
 .hadolint.yaml
@@ -11,7 +12,3 @@
 LICENSE
 README.md
 renovate.json
-root/app/build
-root/app/node_modules
-root/app/package-lock.json
-root/app/yarn.lock

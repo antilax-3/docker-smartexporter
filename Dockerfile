@@ -1,29 +1,31 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE="antilax3/node:latest"
+ARG BASE_IMAGE="antilax3/wolfi:latest"
 
-# The bundle and every package it requires are plain javascript, with no native addon among them, so they are built
-# once on the build platform and copied into the image of each target platform unchanged. The build stage uses the same
-# base as the image it feeds, so each variant bundles with the node it runs on.
-FROM --platform=${BUILDPLATFORM} ${BASE_IMAGE} AS build
+FROM --platform=${BUILDPLATFORM} golang:1.27-alpine AS build
 
-WORKDIR /app
+ARG TARGETOS
+ARG TARGETARCH
 
-COPY root/app/ ./
+WORKDIR /src
+
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
 
 SHELL ["/bin/ash", "-euo", "pipefail", "-c"]
 
 RUN <<'EOT'
 set -euo pipefail
 
-echo "**** build node application ****"
-npm install
-# backpack 0.5 bundles with webpack 3, which hashes with md4, and node only offers md4 through the legacy provider.
-NODE_OPTIONS=--openssl-legacy-provider npm run build
+echo "**** test smartexporter ****"
+go test ./...
 
-echo "**** keep only the runtime dependencies ****"
-# backpack bundles src/ into build/main.js and leaves every package it requires external, so the image needs those
-# packages and none of the toolchain that built the bundle.
-npm prune --omit=dev
+echo "**** build smartexporter ****"
+CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" go build -trimpath -buildvcs=false -ldflags="-s -w" \
+  -o /out/app/smartexporter ./cmd/smartexporter
 EOT
 
 FROM ${BASE_IMAGE}
@@ -38,14 +40,34 @@ LABEL maintainer="Nightah"
 # set working directory
 WORKDIR /app
 
+SHELL ["/bin/ash", "-euo", "pipefail", "-c"]
+
 # copy local files
-COPY --link root/etc/ /etc/
-COPY --link --from=build /app/build/main.js /app/main.js
-COPY --link --from=build /app/node_modules/ /app/node_modules/
+COPY --link root/ /
+COPY --link --from=build /out/ /
 
 # install runtime packages
-RUN apk add --no-cache \
-  smartmontools
+RUN <<'EOT'
+set -euo pipefail
+
+# the two bases package setcap under different names
+if ls /lib/ld-musl-* > /dev/null 2>&1; then
+  SETCAP_PACKAGE="libcap-setcap"
+else
+  SETCAP_PACKAGE="libcap-utils"
+fi
+
+echo "**** install smartmontools ****"
+apk add --no-cache smartmontools
+
+echo "**** let smartctl open the disks as abc ****"
+# The service runs as abc, which can neither open a disk's device node nor send it the raw ATA, SCSI and NVMe
+# commands SMART is read with, so smartctl carries the three capabilities those need. The container still has to be
+# granted them, by --privileged or by --cap-add with --device.
+apk add --no-cache --virtual .setcap "${SETCAP_PACKAGE}"
+setcap cap_dac_override,cap_sys_admin,cap_sys_rawio+ep "$(command -v smartctl)"
+apk del --no-cache .setcap
+EOT
 
 # ports and volumes
 EXPOSE 9120

@@ -1,0 +1,20 @@
+smartctl 7.5 2025-04-30 r5714 [x86_64-linux-6.12.0] (local build)
+Copyright (C) 2002-25, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Model Family:     Western Digital Red
+Device Model:     WDC WD40EFRX-68N32N0
+Serial Number:    WD-WCC7K1234567
+LU WWN Device Id: 5 0014ee 2b1234567
+Firmware Version: 82.00A82
+User Capacity:    4,000,787,030,016 bytes [4.00 TB]
+Sector Sizes:     512 bytes logical, 4096 bytes physical
+Rotation Rate:    5400 rpm
+Form Factor:      3.5 inches
+Device is:        In smartctl database 7.5/5706
+ATA Version is:   ACS-3 T13/2161-D revision 5
+SATA Version is:  SATA 3.1, 6.0 Gb/s (current: 6.0 Gb/s)
+Local Time is:    Wed Sep 30 11:00:00 2026 AEST
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+

@@ -8,12 +8,12 @@ resolve_image "${VARIANT}"
 resolve_platform_image "${PLATFORM}" || exit 1
 
 case "${PLATFORM}" in
-  amd64) APK_ARCH="x86_64" ;;
-  arm64) APK_ARCH="aarch64" ;;
-  armv7) APK_ARCH="armv7" ;;
+  amd64) APK_ARCH="x86_64"; ELF_MACHINE="62" ;;
+  arm64) APK_ARCH="aarch64"; ELF_MACHINE="183" ;;
+  armv7) APK_ARCH="armv7"; ELF_MACHINE="40" ;;
 esac
 
-# The variants differ in libc and in the interpreter node is linked against. Wolfi also ships no getent, so the user
+# The variants differ in libc and in the interpreter smartctl is linked against. Wolfi also ships no getent, so the user
 # database is read out of /etc/passwd, which both bases have.
 case "${VARIANT}" in
   wolfi) OS_ID="wolfi"; LIBC="glibc"; INTERPRETER="/lib/ld-linux-*" ;;
@@ -47,10 +47,15 @@ check() {
   fi
 }
 
-# Waits for the smart-exporter service to answer on port 9120 and prints the names of the smartexporter metrics it
-# serves. With no config mounted, the service's first start falls back to the default config and writes it to /config.
-# The container has no disks to scrape, so the checks cover the metrics the default config declares, not their values.
-READY="for i in \$(seq 1 40); do M=\$(wget -qO- http://localhost:9120/metrics 2> /dev/null | sed -n 's/^# HELP \(smartexporter_[a-z_]*\) .*/\1/p' | xargs); [ -n \"\${M}\" ] && echo \"\${M}\" && break; sleep 0.5; done"
+# Waits for the smart-exporter service to answer on port 9120. With no config mounted, the service's first start falls
+# back to the default config and writes it to /config.
+READY="for i in \$(seq 1 40); do wget -q -O /dev/null http://localhost:9120/metrics && break; sleep 0.5; done"
+
+# The container has no disks, so smartctl is replaced by a script answering from the go tests' fixtures: an ATA drive
+# at /dev/sda and a SAS drive at /dev/sdb. SCRAPED waits for the first scrape to be served and prints the name and
+# value of every smartexporter sample, in the order the service serves them.
+FAKE_SMARTCTL="-v ${REPOSITORY_ROOT}/.buildkite/steps/testdata/smartctl:/usr/local/bin/smartctl:ro -v ${REPOSITORY_ROOT}/internal/smartctl/testdata:/testdata:ro"
+SCRAPED="for i in \$(seq 1 40); do M=\$(wget -q -O - http://localhost:9120/metrics 2> /dev/null | grep '^smartexporter_'); [ -n \"\${M}\" ] && break; sleep 0.5; done; echo \"\${M}\""
 
 echo "--- :label: Image metadata [${DOCKER_PLATFORM}]"
 check "image platform is ${DOCKER_PLATFORM}" "${DOCKER_PLATFORM}" \
@@ -73,27 +78,32 @@ check "abc passwd entry" "abc:911:911:/config:/bin/false" \
   "$(run "" "grep '^abc:' /etc/passwd | cut -d: -f1,3,4,6,7")"
 check "abc is in the users group" "yes" "$(run "" "id -nG abc | tr ' ' '\\n' | grep -qx users && echo yes")"
 check "container keeps s6 supervision" "0" "$(docker run --rm --platform "${DOCKER_PLATFORM}" "${PLATFORM_IMAGE}" true > /dev/null 2>&1; echo $?)"
-check "node runs" "valid" "$(run "" "node --version | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$' && echo valid")"
 
 echo "--- :floppy_disk: SMART Exporter"
-check "smartctl runs" "valid" "$(run "" "smartctl --version | head -n1 | grep -qE '^smartctl [0-9]+\.[0-9]+ ' && echo valid")"
-check "application bundle is installed" "/app/main.js" "$(run "" "ls /app/main.js")"
-check "application sources and build output are removed" "" \
-  "$(run "" "ls -d /app/src /app/build /app/package.json /app/package-lock.json 2> /dev/null" | xargs)"
-check "every package the bundle requires resolves" "express prom-client source-map-support/register" \
-  "$(run "" "cd /app && for m in \$(sed \"s/'/\\\"/g\" main.js | grep -o 'require(\"[^\"]*\")' | cut -d'\"' -f2 | grep -vxE 'child_process|fs' | sort -u); do node -e \"require.resolve('\${m}')\" && echo \${m}; done" | xargs)"
-check "the build toolchain is not shipped" "" \
-  "$(run "" "ls -d /app/node_modules/backpack-core /app/node_modules/webpack /app/node_modules/.bin/backpack 2> /dev/null" | xargs)"
+# smartctl carries capabilities the container must be granted, without which it can't be executed at all.
+SMARTCTL_CAPS="--cap-add SYS_ADMIN --cap-add SYS_RAWIO"
+check "smartctl runs" "valid" "$(run "${SMARTCTL_CAPS}" "smartctl --version | head -n1 | grep -qE '^smartctl [0-9]+\.[0-9]+ ' && echo valid")"
+check "smartexporter is installed" "/app/smartexporter" "$(run "" "ls /app/smartexporter")"
+check "smartexporter is built for ${APK_ARCH}" "${ELF_MACHINE}" "$(run "" "od -An -tu2 -j18 -N2 /app/smartexporter" | xargs)"
+# abc can't open a disk or send it raw commands, so smartctl carries the capabilities to, once the container is granted
+# them. A device node only root can open stands in for a disk: smartctl gets past opening it, to the first command.
+check "smartctl opens a disk as abc when the container is granted the capabilities" "1" \
+  "$(run "${SMARTCTL_CAPS}" "mknod -m 600 /tmp/disk c 1 3; s6-setuidgid abc smartctl -i -d sat /tmp/disk 2>&1 | grep -c 'Read Device Identity failed'")"
 check "port 9120 is exposed" '{"9120/tcp":{}}' "$(docker image inspect -f '{{json .Config.ExposedPorts}}' "${PLATFORM_IMAGE}")"
 check "/config is a volume" '{"/config":{}}' "$(docker image inspect -f '{{json .Config.Volumes}}' "${PLATFORM_IMAGE}")"
-check "default config is written to /config on first start, owned by abc" "abc 10" \
-  "$(run "" "${READY} > /dev/null; echo \$(stat -c %U /config/smartexporter.json) \$(node -p 'require(\"/config/smartexporter.json\").scrapeInterval')")"
-check "smart-exporter service serves the default config's metrics on port 9120" \
-  "smartexporter_temperature smartexporter_airflow_temperature smartexporter_lbas_written smartexporter_lbas_read" \
-  "$(run "" "${READY}")"
+check "default config is written to /config on first start, owned by abc" "abc 644 1" \
+  "$(run "" "${READY} > /dev/null; echo \$(stat -c '%U %a' /config/smartexporter.json) \$(grep -c '\"scrapeInterval\": 10' /config/smartexporter.json)")"
+check "smart-exporter service serves the default config's attributes of the ATA drive on port 9120" \
+  "smartexporter_airflow_temperature=31 smartexporter_lbas_read=1.2345678901e+10 smartexporter_lbas_written=5.4321098765e+10 smartexporter_temperature=33" \
+  "$(run "${FAKE_SMARTCTL}" "${SCRAPED} | sed -E 's/\{.*\} /=/'" | xargs)"
+check "smart-exporter service labels a sample with the configured information fields" \
+  'smartexporter_temperature{device="/dev/sda",device_model="WDC WD40EFRX-68N32N0",serial_number="WD-WCC7K1234567"} 33' \
+  "$(run "${FAKE_SMARTCTL}" "${SCRAPED} | grep '^smartexporter_temperature'")"
+check "smart-exporter service answers on / with a pointer to the metrics" "HTTP/1.1 200 OK" \
+  "$(run "" "${READY} > /dev/null; wget -S -O /dev/null http://localhost:9120/ 2>&1 | grep -m1 -o 'HTTP/1\.[01] [0-9]* [A-Za-z ]*'")"
 # Under emulation the process's command line starts with the qemu interpreter, so only its tail is matched.
 check "smart-exporter service runs as abc" "abc" \
-  "$(run "" "${READY} > /dev/null; for p in /proc/[0-9]*; do case \"\$(tr '\\0' ' ' < \${p}/cmdline 2> /dev/null)\" in *'node /app/main.js ') stat -c %U \${p} ;; esac; done")"
+  "$(run "" "${READY} > /dev/null; for p in /proc/[0-9]*; do case \"\$(tr '\\0' ' ' < \${p}/cmdline 2> /dev/null)\" in *'/app/smartexporter ') stat -c %U \${p} ;; esac; done")"
 
 if [[ ${FAILURES} -gt 0 ]]; then
   echo "^^^ +++"

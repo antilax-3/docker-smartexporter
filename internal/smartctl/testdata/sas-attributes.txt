@@ -1,0 +1,12 @@
+smartctl 7.5 2025-04-30 r5714 [x86_64-linux-6.12.0] (local build)
+Copyright (C) 2002-25, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF READ SMART DATA SECTION ===
+Current Drive Temperature:     31 C
+Drive Trip Temperature:        60 C
+
+Accumulated power on time, hours:minutes 41234:17
+Manufactured in week 12 of year 2016
+Specified cycle count over device lifetime:  10000
+Accumulated start-stop cycles:  52
+Elements in grown defect list: 0

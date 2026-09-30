@@ -4,8 +4,8 @@
 # AntilaX-3/smart-exporter
 [![](https://images.microbadger.com/badges/version/antilax3/smart-exporter.svg)](https://microbadger.com/images/antilax3/smart-exporter "Get your own version badge on microbadger.com") [![](https://images.microbadger.com/badges/image/antilax3/smart-exporter.svg)](https://microbadger.com/images/antilax3/smart-exporter "Get your own image badge on microbadger.com") [![Docker Pulls](https://img.shields.io/docker/pulls/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/) [![Docker Stars](https://img.shields.io/docker/stars/antilax3/smart-exporter.svg)](https://hub.docker.com/r/antilax3/smart-exporter/)
 
-[smart-exporter](https://github.com/AntilaX-3/docker-smartexporter) is a simple server that periodically scrapes S.M.A.R.T stats and exports them via HTTP for Prometheus consumption, written in Node.js.
-The attributes it supplies to Prometheus are configurable, as well as the labels it supplies. 
+[smart-exporter](https://github.com/AntilaX-3/docker-smartexporter) is a simple server that periodically scrapes S.M.A.R.T stats and exports them via HTTP for Prometheus consumption, written in Go.
+The attributes it supplies to Prometheus are configurable, as well as the labels it supplies.
 ## Usage
 ```
 docker create --name=smartexporter \
@@ -14,16 +14,18 @@ docker create --name=smartexporter \
 --privileged=true \
 antilax3/smart-exporter
 ```
+
+smartctl reads the disks as the container's `abc` user, through the `SYS_RAWIO` and `SYS_ADMIN` capabilities, which the container has to be granted. `--privileged` grants them along with every disk; to grant only those, replace it with `--cap-add SYS_RAWIO --cap-add SYS_ADMIN` and a `--device` for each disk, e.g. `--device /dev/sda`. Without them smartctl can't run at all.
 ## Tags
 
 Two variants are built from the one Dockerfile, for `linux/amd64` and `linux/arm64`.
 
 | Variant | Base | Tags |
 | --- | --- | --- |
-| wolfi | [antilax3/node](https://hub.docker.com/r/antilax3/node) `latest` | `latest` |
-| alpine | [antilax3/node](https://hub.docker.com/r/antilax3/node) `alpine` | `alpine` |
+| wolfi | [antilax3/wolfi](https://hub.docker.com/r/antilax3/wolfi) | `latest` |
+| alpine | [antilax3/alpine](https://hub.docker.com/r/antilax3/alpine) | `alpine` |
 
-Wolfi is the default. Both variants run the same bundle with the same packages, so the choice between them is only the base. Every build is also tagged `BK<build>`, with `-alpine` appended for the alpine variant.
+Wolfi is the default. Both variants run the same statically linked binary, with smartmontools from each base's own repository, so the choice between them is only the base. Every build is also tagged `BK<build>`, with `-alpine` appended for the alpine variant.
 
 ## Parameters
 The parameters are split into two halves, separated by a colon, the left hand side representing the host and the right the container side. For example with a volume -v external:internal - what this shows is the volume mapping from internal to external of the container. So -v /mnt/app/config:/config would map /config from inside the container to be accessible from /mnt/app/config on the host's filesystem.
@@ -52,12 +54,15 @@ The container uses a single volume mounted at '/config'. This volume stores the 
 
 ## Configuration
 
-The smartexporter.json is copied to the /config volume when first run. It has two parameters, one optional and one mandatory.
+The smartexporter.json is copied to the /config volume when first run. It has one mandatory parameter and two optional ones.
 
-The optional parameter is:
-- scrapeInterval (default 10 seconds)
+    attributes:     Array (Required)  | The SMART attributes to report, described below
+    scrapeInterval: Number (Optional) | Seconds between scrapes of the disks, 15 if left out; the default file sets 10
+    port:           Number (Optional) | The port the metrics are served on, 9120 by default
 
-The mandatory parameter *reportedAttributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/root/app/src/config/default.json) has examples. 
+A missing configuration file is replaced by the default one. One that can't be parsed, or has no `attributes`, is left in place for you to fix and the defaults are used until it is.
+
+*attributes* is an array of objects. The objects define the SMART attributes that will be parsed and reported. The [default file](https://github.com/AntilaX-3/docker-smartexporter/blob/master/internal/config/default.json) has examples.
 
 **Only one of either attributeID or attributeName is required.**
 
@@ -65,7 +70,9 @@ The mandatory parameter *reportedAttributes* is an array of objects. The objects
     attributeName: String | The attribute name
     name: String (Required) | The name reported to Prometheus, prepended with 'smartexporter_'
     help: String (Required) | Help text provided to Prometheus
-    labelNames: Array of Strings | Mapped to data from the information section of smartctl. Can be used for labels, ie "Device" for /dev/sdx or "Serial Number" for the serial number of the HDD. 
+    labelNames: Array of Strings | Mapped to data from the information section of smartctl. Can be used for labels, ie "Device" for /dev/sdx or "Serial Number" for the serial number of the HDD.
+
+Metrics are served on `/metrics`, alongside the exporter's own `go_` and `process_` metrics. A disk is reported as of the last scrape, so a disk that is removed, or that smartctl can no longer query, stops being reported rather than keeping its last value. Only `/dev/sd*` disks are scraped.
 
 [Known S.M.A.R.T. attributes (Wikipedia)](https://en.wikipedia.org/w/index.php?title=S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes)
 ## Development
@@ -76,7 +83,7 @@ Linting runs locally through [lefthook](https://github.com/evilmartians/lefthook
 lefthook install
 ```
 
-`pre-commit` runs [editorconfig-checker](https://github.com/editorconfig-checker/editorconfig-checker), [hadolint](https://github.com/hadolint/hadolint), `jq`, [shellcheck](https://github.com/koalaman/shellcheck), [typos](https://github.com/crate-ci/typos) and [yamllint](https://github.com/adrienverge/yamllint) over the staged files, and `commit-msg` enforces [Conventional Commits](https://www.conventionalcommits.org). Run everything on demand with:
+`pre-commit` runs [golangci-lint](https://golangci-lint.run) and `go test`, [editorconfig-checker](https://github.com/editorconfig-checker/editorconfig-checker), [hadolint](https://github.com/hadolint/hadolint), `jq`, [shellcheck](https://github.com/koalaman/shellcheck), [typos](https://github.com/crate-ci/typos) and [yamllint](https://github.com/adrienverge/yamllint) over the staged files, and `commit-msg` enforces [Conventional Commits](https://www.conventionalcommits.org). Run everything on demand with:
 
 ```bash
 lefthook run pre-commit --all-files
@@ -84,9 +91,11 @@ lefthook run pre-commit --all-files
 
 ### Dependencies
 
-The application's npm dependencies in `root/app/package.json` are managed by renovate. The base image is followed at `antilax3/node:latest` and `antilax3/node:alpine`, so node itself is bumped in [docker-baseimage-node](https://github.com/antilax-3/docker-baseimage-node) and reaches this image on its next build, and smartmontools follows the base image's package repository.
+Renovate bumps the go modules in `go.mod`, tidying `go.sum` after each update, the go version and the `golang` build image in the Dockerfile. The base images are followed at `antilax3/wolfi:latest` and `antilax3/alpine:latest`, so each build picks up their changes, and smartmontools follows each base image's package repository.
 
 ## Version
+- **30/09/26:** Let smartctl read the disks as the container user
+- **30/09/26:** Rewrite smart-exporter in Go and build it on the wolfi and alpine base images
 - **30/09/26:** Build on wolfi by default and publish alpine under its own tag, for amd64 and arm64
 - **04/07/25:** Updated to use alpine 3.22 image and s6 v3 service structure
 - **24/06/19:** Add ability to capture attributes from SAS drives
