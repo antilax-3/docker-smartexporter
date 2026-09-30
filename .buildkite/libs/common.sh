@@ -15,12 +15,12 @@ REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GITHUB_REPOSITORY="antilax-3/docker-smartexporter"
 DOCKER_REPOSITORY="antilax3/smart-exporter"
 REGISTRY="docker.io"
-# Platforms every image is built for, by the short name used in test step keys and labels. The Jenkins job built
-# amd64 only, and the port keeps that until the image is proven on anything else.
-PLATFORMS="amd64"
+# Platforms every image is built for, by the short name used in test step keys and labels. armv7 is absent because
+# antilax3/node, like the antilax3/wolfi image beneath it, publishes amd64 and arm64 only.
+PLATFORMS="amd64 arm64"
 # Base images every variant is built on, in tag order. The first is the default variant and takes the unsuffixed
 # tags; the others take a tag suffix of their own name, following the docker-library convention.
-VARIANTS="wolfi"
+VARIANTS="wolfi alpine"
 DEFAULT_VARIANT="wolfi"
 
 DOCKERFILE="${REPOSITORY_ROOT}/Dockerfile"
@@ -37,6 +37,7 @@ fi
 variant_base() {
   case "${1}" in
     wolfi) echo "antilax3/node:latest" ;;
+    alpine) echo "antilax3/node:alpine" ;;
   esac
 }
 
@@ -80,7 +81,7 @@ sanitize_tag() {
 # smart-exporter has no upstream release to cut a version ladder from, so master publishes latest and the build tag only.
 #
 # Every tag of a non-default variant carries that variant's suffix, except the one standing in for latest, which is
-# the bare variant name: an alpine variant beside the default wolfi would be alpine and BK12-alpine.
+# the bare variant name: the alpine variant of the above is alpine and BK12-alpine.
 #
 # $1 - the variant, defaulting to DEFAULT_VARIANT
 resolve_image() {

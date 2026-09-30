@@ -25,10 +25,12 @@ if [[ "${BUILDKITE_LABEL}" =~ ^:docker:\ Build\ and\ Deploy ]] && master; then
   fi
   dockertags=$(curl -fsL --retry 3 -H "Authorization: Bearer ${anontoken}" "https://registry-1.docker.io/v2/${DOCKER_REPOSITORY}/tags/list" | jq -r '.tags[]' | sort)
 
-  # latest, the bare variant tags, BK tags and the numeric tags the Jenkins job published are never removed, with or
-  # without a variant suffix. The numeric pattern also covers a version ladder, should the image ever gain one.
+  # latest, the bare variant tags, BK tags and the numeric tags the Jenkins job published are never removed. BK and
+  # numeric tags are kept with any suffix, not only this build's variants: a branch adding a variant pushes
+  # BK<n>-<variant> tags that master doesn't know yet, and its test steps pull them while a master build may be cleaning
+  # up. The numeric pattern also covers a version ladder, should the image ever gain one.
   variant_pattern=$(tr ' ' '|' <<< "${VARIANTS}")
-  keep="^(latest|${variant_pattern}|(BK[0-9]+|PR[0-9]+|[0-9]+(\.[0-9]+)*)(-(${variant_pattern}))?)$"
+  keep="^(latest|${variant_pattern}|(BK[0-9]+|[0-9]+(\.[0-9]+)*)(-[a-z0-9]+)?|PR[0-9]+(-(${variant_pattern}))?)$"
 
   echo "--- :docker: Removing tags for deleted branches"
   dockerbranchtags=$(grep -vE "${keep}" <<< "${dockertags}")

@@ -13,9 +13,11 @@ case "${PLATFORM}" in
   armv7) APK_ARCH="armv7" ;;
 esac
 
-# Wolfi ships no getent, so the user database is read out of /etc/passwd.
+# The variants differ in libc and in the interpreter node is linked against. Wolfi also ships no getent, so the user
+# database is read out of /etc/passwd, which both bases have.
 case "${VARIANT}" in
   wolfi) OS_ID="wolfi"; LIBC="glibc"; INTERPRETER="/lib/ld-linux-*" ;;
+  alpine) OS_ID="alpine"; LIBC="musl"; INTERPRETER="/lib/ld-musl-*" ;;
 esac
 
 REVISION="${BUILDKITE_COMMIT}"
