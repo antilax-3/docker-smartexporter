@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM antilax3/node:latest AS build
+# The bundle and every package it requires are plain javascript, with no native addon among them, so they are built
+# once on the build platform and copied into the image of each target platform unchanged.
+FROM --platform=${BUILDPLATFORM} antilax3/node:latest AS build
 
 WORKDIR /app
 
